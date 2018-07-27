@@ -49,11 +49,11 @@ User Function fSincPedidos(lJob)
 	cURLBase      := Alltrim( GetMV("MV_XMPPEDI",,"") )
 	cC5_XULTAL    := AllTrim(GetMV("C5_XULTALT",,"")) // Obtem a ultima data/hora de sincronizacao
 	cMailResp         := AllTrim(GetMV("MV_GWMAILR",,""))
-
+	cNewDtMod := cC5_XULTAL
 	//MemoWrite("C:\temp\urlGetPedidos.txt",cURLBase+"&alterado_apos=" + StrTran(cC5_XULTAL," ","%20"))
 
 	aHttpGet := u_GetJson(cURLBase+"&alterado_apos=" + StrTran(cC5_XULTAL," ","%20"))
-	
+
 	cJson    := aHttpGet[1]
 	cRetHead := aHttpGet[2]
 	cCodHttp := aHttpGet[3]
@@ -66,19 +66,18 @@ User Function fSincPedidos(lJob)
 				aRet := U_fExecPed(oPedido[xCount],cNewDtMod)
 			next xCount
 
-			if Empty(aRet)
-
-			else
-				cNewDtMod := aRet[2]
+			if !Empty(aRet)
+				if (aRet[1])
+					cNewDtMod := aRet[2]	
+				endif
 			endif
-
 		else
 			cHtml := "fSincPedidosA: Erro ao processar FWJsonDeserialize do Pedido de Vendas " ;
 			+ " com Json: " + cJson   
 			u_GwLog("meuspedidos.log", cHtml)
 			u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cHtml)
 		endif
-		
+
 	endif
 
 	if ! Empty(cNewDtMod)
@@ -87,7 +86,7 @@ User Function fSincPedidos(lJob)
 
 	u_GwLog("meuspedidos.log","fSincPedidos: Finalizada sincronizacao dos Pedidos. Ultima sincronizacao " + GetMV("C5_XULTALT",,"") )
 
-	cQuery := "SELECT SC5.C5_XIDMPED, SC5.C5_FILIAL, SC5.C5_NUM, SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC5.C5_XMPDEMI,SC5.C5_VEND1,SC5.C5_CONDPAG,SC5.C5_XULTALT, SC5.C5_TPFRETE, SC5.C5_FECENT, SC5.C5_XGERFIN, C5_TABELA,C5_MENNOTA ,SC5.C5_EMISSAO," + cEol
+	cQuery := "SELECT SC5.C5_XIDMPED, SC5.C5_FILIAL, SC5.C5_NUM, SC5.C5_CLIENTE,SC5.C5_LOJACLI,SC5.C5_XMPDEMI,SC5.C5_VEND1,SC5.C5_CONDPAG,SC5.C5_XULTALT, SC5.C5_TPFRETE, SC5.C5_FECENT, SC5.C5_XGERFIN, C5_TABELA,C5_MENNOTA ,SC5.C5_EMISSAO,SC5.C5_NATUREZ," + cEol
 	cQuery += "CASE WHEN D_E_L_E_T_ = '*' THEN '.T.' WHEN D_E_L_E_T_ = '' THEN '.F.' END AS DELETADO" + cEol
 	cQuery += "FROM SC5010 SC5" + cEol
 	cQuery += ""
@@ -107,21 +106,21 @@ User Function fSincPedidos(lJob)
 	SINCPED->(dbGoTop())
 
 	While (SINCPED->(! EoF()))
-		cNewDtMod := fProcPed(SINCPED->C5_XIDMPED,SINCPED->C5_FILIAL,SINCPED->C5_NUM,SINCPED->C5_CLIENTE,SINCPED->C5_LOJACLI,SINCPED->C5_XMPDEMI,SINCPED->C5_VEND1,SINCPED->C5_CONDPAG,SINCPED->C5_XULTALT,SINCPED->DELETADO,SINCPED->C5_TPFRETE,SINCPED->C5_FECENT,SINCPED->C5_XGERFIN,SINCPED->C5_TABELA,SINCPED->C5_MENNOTA,SINCPED->C5_EMISSAO)
+		cNewDtMod := fProcPed(SINCPED->C5_XIDMPED,SINCPED->C5_FILIAL,SINCPED->C5_NUM,SINCPED->C5_CLIENTE,SINCPED->C5_LOJACLI,SINCPED->C5_XMPDEMI,SINCPED->C5_VEND1,SINCPED->C5_CONDPAG,SINCPED->C5_XULTALT,SINCPED->DELETADO,SINCPED->C5_TPFRETE,SINCPED->C5_FECENT,SINCPED->C5_XGERFIN,SINCPED->C5_TABELA,SINCPED->C5_MENNOTA,SINCPED->C5_EMISSAO,SINCPED->C5_NATUREZ)
 		SINCPED->(DbSkip())
 	enddo
 
 	if ! Empty(cNewDtMod)
 		PutMV("C5_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
 	endif
-	
+
 	u_GwLog("meuspedidos.log","fSincPedidos: Finalizada sincronizacao dos Pedidos de Vendas. Atualizado C5_XULTALT para " + AllTrim(GetMV("C5_XULTALT",,"")))
-	
+
 	FreeObj(oPedido)
 	restArea(aArea)
 Return
 
-static function fProcPed(cIdPedido,Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObs,cEmi)
+static function fProcPed(cIdPedido,Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObs,cEmi,cNat)
 
 	local cNewDtMod := ""
 	local cURLBase  := alltrim( GetMV("MV_XMPPED",,"") )
@@ -131,7 +130,7 @@ static function fProcPed(cIdPedido,Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCon
 	//Se não tem ID dos meus pedidos e não está deletado, INCLUSÃO nos Meus Pedidos
 	if lEnviaPC .And. Empty(cIdPEdido) .and. cDelet = '.F.'
 
-		cJson := fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObs,cEmi,1)
+		cJson := fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObs,cEmi,cNat,1)
 		if Empty(cJson)
 		else
 			MemoWrite("C:\temp\cJsonI.txt",cJson)
@@ -171,7 +170,7 @@ static function fProcPed(cIdPedido,Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCon
 	//Se tem ID do Meus Pedidos e não está deletado ALTERAÇÃO
 	if ! Empty(cIdPEdido) .and. cDelet = '.F.'
 
-		cJson := fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObs,cEmi,2)
+		cJson := fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObs,cEmi,cNat,2)
 
 		MemoWrite("C:\temp\cJson.txt",cJson)
 
@@ -242,7 +241,7 @@ static function fProcPed(cIdPedido,Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCon
 
 return cNewDtMod
 
-Static Function fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObsPed,cEmi,cNOp)
+Static Function fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDtUlt,cDelet,cTpFre,cDtEnt,cGerFin,cTab,cObsPed,cEmi,cNat,cNOp)
 
 	local cJson := ""
 	local cTranFob := alltrim(GetMV("MV_XMPFOB",,""))
@@ -257,8 +256,6 @@ Static Function fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDt
 	//local cCondPag :=""			//condicao_pagamento	//E4_DESC informar somente se não tiver o campo condicao_pagamento_id	
 	local cTpPedId :=""			//tipo_pedido_id		//Tratar tes 50  Bonificação, 51 Amostra e 52 Troca  (C6_OPER = 14 OU 15 É VENDA, 7 OU R OU W OU 16 É BONIFICAÇÃO, 27 AMOSTRA, 6  TROCA) OUTRO DA ERRO
 	local cObs := ""			//observacoes			//
-	//14 GERFIN = N
-	//15 GER FIN = S
 	local cExtras := ""			//extras
 	local cItens := ""			//itens
 
@@ -283,7 +280,15 @@ Static Function fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDt
 	cCriaId := U_fGetVend(cVend,2)
 	cCondId := U_fGetCond(cCondPag,2)
 	//cCondPag := 
-	cTpPedId := U_fGetTpPed(Filial,cNum)
+	if(alltrim(cNat) =='10106')
+		cTpPedId := fGetTpPed("BONIFICACAO",2)
+	elseif alltrim(cNat) == '10107'
+		cTpPedId := fGetTpPed("AMOSTRA",2)
+	elseif alltrim(cNat) == 'DEV./TROCA'
+		cTpPedId := fGetTpPed("TROCA",2)
+	else
+		cTpPedId := 'null'
+	endif
 	cObs :=  alltrim(cObsPed)
 
 	cExtras := fMontaExtras(cDtEnt,cGerFin)

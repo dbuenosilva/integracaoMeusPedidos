@@ -21,10 +21,16 @@ User Function fExecPed(oPedido,cNewDtMod)
 	Local aRet := {}
 	Local aItens := {}
 	local lEscreve := .T.
+	local cTpPed := ""
+	local cTpOp := ""
+	local cGerFin := ""
+	local nPosGer := 0
+
 	private cRisco := ""
 	PRIVATE lMsErroAuto := .F. 
 	Private cMailResp     :=""
 	Private cNumMP := ""
+
 	default oPedido := {}
 	default cNewDtMod := ""
 
@@ -36,22 +42,10 @@ User Function fExecPed(oPedido,cNewDtMod)
 		return {}
 	endif
 
-	u_GwLog("meuspedidos.log","fExecPed: Iniciando escrita do Pedido Numero " + cNumMP +" no ERP.")
 	cMailResp     := AllTrim(GetMV("MV_GWMAILR",,""))
 	cNumMP := alltrim(cValtoChar(oPedido:NUMERO))
+	u_GwLog("meuspedidos.log","fExecPed: Iniciando escrita do Pedido Numero " + cNumMP +" no ERP.")
 
-	//Verificar se o pedido ja esta no sistema.
-	/*	DbSelectArea("SC5")
-	if !SC5->(DbOrderNickname("IDPEDIDO"))
-	u_GwLog("meuspedidos.log","fExecPed: indice nickname IDPEDIDO nao existe para SC5.")
-	restArea(aArea)
-	return {}
-	elseif SC5->(DbSeek(cValtoChar(oPedido:ID),.F.))
-	u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cValtoChar(oPedido:ID))+ " ja existe no sistema numero :"+alltrim(SC5->C5_NUM))
-	restArea(aArea)
-	return {}
-	endif
-	*/
 	//Verificar se o pedido ja esta no sistema.
 	lEscreve := fVerInc(cValtoChar(oPedido:ID))
 
@@ -59,7 +53,23 @@ User Function fExecPed(oPedido,cNewDtMod)
 		restArea(aArea)
 		return{}
 	endif
-	aCabec := fCab(oPedido)
+
+	//Pegar o tipo do pedido VENDA/BONIFICACAO/TROCA/AMOSTRA
+	if !Empty(cValtoChar(oPedido:TIPO_PEDIDO_ID))
+		cTpPed := alltrim(U_fGetTpPed(alltrim(cValtoChar(oPedido:TIPO_PEDIDO_ID)),1))
+	endif
+
+	//Carrega o cGerafin 1-Sim/2-Nao
+	cGerFin := fCmpExt(oPedido:EXTRAS,"C5_XGERFIN")
+	if alltrim(lower(cGerFin)) == 'sim'
+		cGerFin = '1'
+	endif
+	if alltrim(lower(cGerFin)) == 'nao'
+		cGerFin = '2'
+	endif
+
+	//Monta Cabeçalho do Pedido
+	aCabec := fCab(oPedido,cTpPed,cGerFin)
 
 	if Empty(aCabec)
 		cLog := "fExecPed: Erro na geracao do cabecalho do Pedido Numero " + cNumMP + ", aCabec vazio!"
@@ -69,7 +79,21 @@ User Function fExecPed(oPedido,cNewDtMod)
 		return {}
 	endif
 
-	aRet := fItens(oPedido:ITEMS)
+	//Pegar o gera financeiro atualizado para montar os tipos de operacao
+	nPosGer := aScan(aCabec,{|x| x[1] == "C5_XGERFIN"})
+	cGerfin := aCabec[nPosGer][2]
+	
+	
+	//Tipo de Operação 15-Orçamento/14-VENDA/06-BONIFICACAO
+	if(alltrim(aCabec) == '1')
+		cTpOp := '15'
+	elseif cTpPed == "BONIFICACAO"
+		cTpOp := '06'
+	else
+		cTpOp := '14'
+	endif
+
+	aRet := fItens(oPedido:ITEMS,cTpOp)
 
 	if Empty(aRet)
 		cLog := "fExecPed: Erro na geracao dos itens do Pedido Numero " + cNumMP + ", aRet vazio  !"
@@ -103,11 +127,13 @@ User Function fExecPed(oPedido,cNewDtMod)
 
 		If !lMsErroAuto    
 
-			if(alltrim(cRisco) == "E")
-				lRet := U_fSetStatusPV(allTrim(cValtoChar(oPedido:ID)),U_fGetStatus("ANALISE"))
+			/*if(alltrim(cRisco) == "E")
+			lRet := U_fSetStatusPV(allTrim(cValtoChar(oPedido:ID)),U_fGetStatus("ANALISE"))
 			else
-				lRet := U_fSetStatusPV(allTrim(cValtoChar(oPedido:ID)),U_fGetStatus("PENDENTE"))
-			endif
+
+			endif*/
+
+			lRet := U_fSetStatusPV(allTrim(cValtoChar(oPedido:ID)),U_fGetStatus("PENDENTE"))
 
 			if  !Empty(cValtoChar(oPedido:ULTIMA_ALTERACAO)) .and. AllTrim(cValtoChar(oPedido:ULTIMA_ALTERACAO)) > AllTrim(cNewDtMod)
 				cNewDtMod := oPedido:ULTIMA_ALTERACAO
@@ -116,9 +142,9 @@ User Function fExecPed(oPedido,cNewDtMod)
 			if!(lRet)
 			endif
 			u_GwLog("meuspedidos.log","fExecPed: Pedido Numero " + cNumMP + " incluido com sucesso.")
-			
+
 		Else
-			DisarmTransaction()
+
 			cPath   := "meuspedidos\"
 			cNomeArq  := "pedido_" + AllTrim(cNumMP) + ".txt"    			
 			MostraErro(cPath, cNomeArq)//Salva o erro no arquivo e local indicado na funcao 			
@@ -126,6 +152,8 @@ User Function fExecPed(oPedido,cNewDtMod)
 			u_GwLog("meuspedidos.log",cLog)
 			u_fGravaMeusPedidos( { "fExecPed","","","","","",u_GwTiraGraf(cLog),.F.} )
 			u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog,cPath + cNomeArq)
+			DisarmTransaction()
+			lRet := .F.
 		EndIf 
 
 	End Transaction
@@ -133,24 +161,42 @@ User Function fExecPed(oPedido,cNewDtMod)
 	restArea(aArea)
 return {lRet,cNewDtMod}
 
-Static Function fCab(oPedido)
+Static Function fCab(oPedido,cTpPed,cGerFin)
+
+	local TempEnt := ""
 	local aCab := {}
 	local cTpTransp := ""
 	local cCondPag := ""
 	local cTranFob := alltrim(GetMV("MV_XMPFOB",,""))
-	local cNat := GetMv("MV_XMPNAT",,"10101")
+	local cNat := ""
 	local dDataEnt := StoD("")
 	local cDtUlt := ""
 	local cId := ""
 	local cDtEmi := ""
-	
+
 	//local cVNome := ""
-	
+
 	cNumMP := alltrim(cValtoChar(oPedido:NUMERO))
-	cOBS := oPedido:OBSERVACOES
+	cOBS := u_GwTiraGraf(oPedido:OBSERVACOES)
+
+	if cTpPed == "BONIFICACAO"
+		cNat := alltrim(getMV("MV_XNATB",,"10106"))
+		cCondPag := alltrim(getMV("MV_XCONB",,"155"))
+	elseif cTpPed == "AMOSTRA"
+		cGerFin := '1'
+		cNat := alltrim(getMV("MV_XNATA",,"10107"))
+		cCondPag := alltrim(getMV("MV_XCONA",,"248"))
+	elseif cTpPed == "TROCA"
+		cGerFin := '1'
+		cNat := alltrim(getMV("MV_XNATT",,"DEV./TROCA"))
+		cCondPag := alltrim(getMV("MV_XCONT",,"012"))
+	else
+		cNat := alltrim(getMV("MV_XNATV",,"10101"))
+	endif
+
+
+
 	cFormPag := fGetForm(allTrim(cValtoChar(oPedido:FORMA_PAGAMENTO_ID)))
-	cDtEmi := alltrim(cValtoChar(oPedido:DATA_EMISSAO))
-	
 	if Empty(cFormPag)
 		cLog := "fExecPed: Erro ao carregar a forma de pagamento do pedido " + cNumMP
 		u_GwLog("meuspedidos.log",cLog)
@@ -158,8 +204,11 @@ Static Function fCab(oPedido)
 		return {}
 	endif
 
-	dDataEnt := fGetDtEnt(oPedido:EXTRAS)
+	cDtEmi := alltrim(cValtoChar(oPedido:DATA_EMISSAO))
 
+
+	TempEnt := fCmpExt(oPedido:EXTRAS,"C5_FECENT")
+	dDataEnt := StoD(subStr(TempEnt,1,4)+ subStr(TempEnt,6,2) + subStr(TempEnt,9,2))
 	if Empty(dDataEnt)
 
 		dDataEnt := StoD(subStr(alltrim(cValtoChar(oPedido:DATA_EMISSAO)),1,4) + subStr(alltrim(cValtoChar(oPedido:DATA_EMISSAO)),6,2) + subStr(alltrim(cValtoChar(oPedido:DATA_EMISSAO)),9,2) )		
@@ -202,18 +251,20 @@ Static Function fCab(oPedido)
 		return {}
 	endif
 
-	DbSelectArea("SE4")
-	if !SE4->(DbOrderNickname("IDCONDPAG"))
-		cLog := "fExecPed: indice de nickname IDCONDPAG não encontrado para tabela SE4 para gravar pedido " + cNumMP
-		u_GwLog("meuspedidos.log",cLog)
-		u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog)
-		return {}
-	elseif SE4->(DbSeek(cValtoChar(oPedido:CONDICAO_PAGAMENTO_ID),.F.))
-		cCondPag := SE4->E4_CODIGO
-	else
-		cLog := "fExecPed: Condicao de pagamento de Id: "+alltrim(cValtoChar(oPedido:CONDICAO_PAGAMENTO_ID))+" nao encontrado para gravar o Pedido " + cNumMP
-		u_GwLog("meuspedidos.log",cLog)
-		u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog)
+	if Empty(cCondPag)
+		DbSelectArea("SE4")
+		if !SE4->(DbOrderNickname("IDCONDPAG"))
+			cLog := "fExecPed: indice de nickname IDCONDPAG não encontrado para tabela SE4 para gravar pedido " + cNumMP
+			u_GwLog("meuspedidos.log",cLog)
+			u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog)
+			return {}
+		elseif SE4->(DbSeek(cValtoChar(oPedido:CONDICAO_PAGAMENTO_ID),.F.))
+			cCondPag := SE4->E4_CODIGO
+		else
+			cLog := "fExecPed: Condicao de pagamento de Id: "+alltrim(cValtoChar(oPedido:CONDICAO_PAGAMENTO_ID))+" nao encontrado para gravar o Pedido " + cNumMP
+			u_GwLog("meuspedidos.log",cLog)
+			u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog)
+		endif
 	endif
 
 	DbSelectArea("SA1")
@@ -236,11 +287,18 @@ Static Function fCab(oPedido)
 		cXNomCli := SA1->A1_NOME
 		cXFantazia := SA1->A1_NREDUZ
 		cLoja := SA1->A1_LOJA
-		cGerFin := SA1->A1_XGFINAN
+
+
+		if Empty(cGerFin)
+			cGerFin := SA1->A1_XGFINAN
+		endif
+
 		cTpCli := SA1->A1_TIPO
+
 		if Empty(cCondPag)
 			cCondPag := SA1->A1_CONDPAG
 		endif
+
 		cTabPrc := SA1->A1_TABELA
 		cRota:= SA1->A1_REGIAO
 		cDesRota:= SA1->A1_XDESCRO
@@ -312,9 +370,9 @@ static function fGetForm(cId)
 	endif
 
 
-return cFormPag
+	return cFormPag
 
-static function fItens(Itens)
+	static function fItens(Itens,cTpOp)
 	local aItens := {}
 	local aLinha := {}
 	local xCount := 1
@@ -369,34 +427,13 @@ static function fItens(Itens)
 		aadd(aLinha,{"C6_PRCVEN",PrcVen,Nil})    
 		aadd(aLinha,{"C6_PRUNIT",PrUnit,Nil})    
 		aadd(aLinha,{"C6_VALOR",Valor,Nil})    
-
+		aadd(aLinha,{"C6_OPER",cTpOp,Nil})
 		nItem += 1
 		ValTot += Itens[xCount]:SUBTOTAL
 		aAdd(aItens,aLinha)
 	next xCount
 
 return {aItens,ValTot}
-
-Static Function fGetDtEnt(aExtras)
-
-	local dData :=  StoD("")
-	local x3Nome := "C5_FECENT"
-	local xCount := 1
-	DbSelectArea("ZZ2")
-	ZZ2->(DbSetOrder(1))//ZZ2_NOME
-
-	if ZZ2->(DbSeek(x3Nome))
-		for xCount := 1 to len(aExtras)
-			if(alltrim(cValtoChar(aExtras[xCount]:CAMPO_EXTRA_ID)) == alltrim(ZZ2->ZZ2_ID))
-				dData := StoD(subStr(cValtoChar(aExtras[xCount]:Valor),1,4) + subStr(cValtoChar(aExtras[xCount]:Valor),6,2) + subStr(cValtoChar(aExtras[xCount]:Valor),9,2) )
-				EXIT
-			endif
-		next xCount
-	else
-		return dData
-	endif
-
-return dData
 
 static function fVerInc(cId)
 	local lEscreve := .T.
@@ -424,12 +461,41 @@ static function fVerInc(cId)
 		if(alltrim(VERPED->C5_XIDMPED) == alltrim(cId))
 			lEscreve := .F.
 			if(VERPED->DELETADO == '.T.')
-			u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(SC5->C5_NUM) + " e esta deletado.")
+				u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(VERPED->C5_NUM) + " e esta deletado.")
 			elseif(VERPED->DELETADO == '.F.')			 	
-				u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(SC5->C5_NUM))
+				u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(VERPED->C5_NUM))
 			endif
 		endif
 		VERPED->(DbSkip())
 	enddo
 
 return lEscreve
+
+
+Static Function fCmpExt(aExtras,cNome)
+
+	local cReturn := ""
+	local xCount := 1
+
+	default cNome := ""
+
+	if Empty(cNome)
+		u_GwLog("meuspedidos.log","fCmpExt: Erro parametro cNome vazio!")
+		return cReturn
+	endif
+
+	DbSelectArea("ZZ2")
+	ZZ2->(DbSetOrder(1))//ZZ2_NOME
+
+	if ZZ2->(DbSeek(cNome))
+		for xCount := 1 to len(aExtras)
+			if(alltrim(cValtoChar(aExtras[xCount]:CAMPO_EXTRA_ID)) == alltrim(ZZ2->ZZ2_ID))
+				cReturn := cValtoChar(aExtras[xCount]:VALOR)
+				EXIT
+			endif
+		next xCount
+	else
+		return cReturn
+	endif
+
+return cReturn
