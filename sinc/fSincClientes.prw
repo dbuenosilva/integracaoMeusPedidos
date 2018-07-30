@@ -17,7 +17,7 @@
 */
 
 User Function fSincClientes(lJob)
-	Local cURLBase      := ""
+	
 	Local cQuery 	 	:= ""
 	Local cJson         := ""
 	Local cRetHead      := ""
@@ -34,10 +34,8 @@ User Function fSincClientes(lJob)
 	Local lJaTemContatos:= .F.
 	Local lInclusao		:= .F.
 	Local lAlteracao    := .F.
-	Local cMailNewCli   := ''
-	Local cAssNewCli    := ""
-	Local cMsg          := ""
 
+	Private cURLBase      := ""
 	Private cEol	    := chr(13)+chr(10)
 	Private cMailResp   := ""
 	Private cSGBD       := ""
@@ -59,8 +57,13 @@ User Function fSincClientes(lJob)
 	cA1_XULTALT       := AllTrim(GetMV("A1_XULTALT",,"")) // Obtem a ultima data/hora de sincronizacao	
 	cMailResp         := AllTrim(GetMV("MV_GWMAILR",," "))
 	cMailNewCli       := AllTrim(GetMV("MV_GWMAILC",," "))
+
+	// Obtem lista de clientes que foram criados ou alterados em Meus Pedidos
+	// e os incluo/altera no Protheus
+	cNewDtMod := fGetNovosClientes()
 	
-	// Obtem lista de clientes do Protheus para serem atualizados em Meus Pedidos 
+	
+	// Obtem lista de clientes alterados no Protheus para serem atualizados em Meus Pedidos 
 	cQuery += " SELECT A1_COD AS CODIGO, A1_LOJA AS LOJA,"
 	//		-- TELFONES	
 	cQuery += " CASE WHEN A1_TEL <> ' ' THEN LTRIM(RTRIM(A1_DDD)) + ' ' + A1_TEL ELSE ' ' END AS tel1_numero," 		 				
@@ -209,156 +212,10 @@ User Function fSincClientes(lJob)
 		cJson += '        "cnpj": "' + u_GwTiraGraf(CLIENTES->cnpj) + '",'
 		cJson += '        "rua": "' + u_GwTiraGraf(CLIENTES->rua) + '",'
 		cJson += '        "complemento": "' + u_GwTiraGraf(CLIENTES->complemento) + '",'
+
 		// Inclui ou atualiza os contatos
-		cJson += '        "contatos": ['
-
-		// Busca todos contatos deste cliente
-		cQuery := " 		SELECT U5_CODCONT AS CONTATO, "			
-		cQuery += " 			ISNULL(U5_CONTAT, ' ') AS CON_NOME , " 
-		cQuery += " 			ISNULL(U5_XIDMPED, ' ') AS CON_id,  "
-		cQuery += " 			CASE WHEN ISNULL(U5_FONE, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FONE, ' ') ELSE '' END AS CON_TEL1, " 
-		cQuery += " 			ISNULL(U5_XIDFONE, ' ') AS CIDTEL1, "
-		cQuery += " 			CASE WHEN ISNULL(U5_CELULAR, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_CELULAR, ' ') ELSE '' END AS CON_TEL2, " 			 
-		cQuery += " 			ISNULL(U5_XIDCELU,' ') AS CIDTEL2, " 
-		cQuery += " 			CASE WHEN ISNULL(U5_FAX, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FAX, ' ') ELSE '' END AS CON_TEL3, " 			 
-		cQuery += " 			ISNULL(U5_XIDFAX, ' ') AS CIDTEL3,  "
-		cQuery += " 			CASE WHEN ISNULL(U5_FCOM1, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FCOM1, ' ') ELSE '' END AS CON_TEL4, " 			 	
-		cQuery += " 			ISNULL(U5_XIDFCO1, ' ') AS CIDTEL4,  "
-		cQuery += " 			CASE WHEN ISNULL(U5_FCOM2, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FCOM2, ' ') ELSE '' END AS CON_TEL5, " 			 	
-		cQuery += " 			ISNULL(U5_XIDFCO2, ' ') AS CIDTEL5, "
-		cQuery += " 			CASE WHEN LEN(U5_EMAIL) > 5 AND U5_EMAIL LIKE '%@%' "       		
-		cQuery += " 				AND U5_EMAIL NOT LIKE '%,%' AND U5_EMAIL  NOT LIKE '%;%' THEN ISNULL(U5_EMAIL, ' ') ELSE '' END AS CON_emails, "
-		cQuery += " 			ISNULL(U5_XIDMAIL, ' ') AS CON_IDMAIL, " 
-		cQuery += " 			ISNULL(UM_DESC,	' ') AS CON_cargo, "
-		cQuery += " 			CASE WHEN AC8.D_E_L_E_T_ = '*' THEN 'true' else 'false' END AS CON_excluido "
-		cQuery += " 	 FROM " + RetSQLName("SA1") + " SA1  "
-		cQuery += " 	 INNER JOIN " + RetSQLName("AC8") + " AC8 ON AC8_FILENT = A1_FILIAL AND AC8_CODENT = A1_COD + A1_LOJA "
-		cQuery += " 		AND AC8_ENTIDA = 'SA1' " // -- AND AC8.D_E_L_E_T_ = SA1.D_E_L_E_T_ "
-		cQuery += "      INNER JOIN " + RetSQLName("SU5") + " SU5 ON U5_FILIAL = AC8_FILIAL AND U5_CODCONT = AC8_CODCON "
-		cQuery += " 		AND AC8_ENTIDA = 'SA1' " //--AND AC8.D_E_L_E_T_ = SU5.D_E_L_E_T_ 
-		cQuery += " 	 LEFT JOIN " + RetSQLName("SUM") + " CARGO ON  UM_CARGO = U5_FUNCAO AND SU5.D_E_L_E_T_ = CARGO.D_E_L_E_T_ "
-		cQuery += "WHERE SA1.D_E_L_E_T_ <> '*' AND A1_COD = '" + CLIENTES->CODIGO + "' AND A1_LOJA = '" + CLIENTES->LOJA + "' "
-		cQuery += "	GROUP BY U5_CODCONT,U5_CONTAT,U5_DDD, "
-		cQuery += "		U5_XIDMPED,U5_FONE,U5_XIDFONE,U5_CELULAR,U5_XIDCELU,U5_FAX,U5_XIDFAX,U5_FCOM1, "
-		cQuery += "		U5_XIDFCO1,U5_FCOM2,U5_XIDFCO2,U5_EMAIL,U5_XIDMAIL,UM_DESC,AC8.D_E_L_E_T_ "
-		cQuery += "ORDER BY U5_CODCONT "
-
-		MemoWrite("C:\temp\contatos.txt",cQuery)
-
-		if Select("CONTATOS") > 0
-			CONTATOS->(DbCloseArea())
-		endif
-
-		TcQuery cQuery New Alias "CONTATOS"
-
-		lJaTemContatos := .F.		
-		lJaTemTelefone := .F.				
-		While ! CONTATOS->(EOF()) 			
-			IF lJaTemContatos
-				cJson += ','
-			endif
-			cJson += '            {'	//abre contatos
-			cJson += '                "telefones": [ ' // inicializa telefones						
-
-			if ! Empty(CONTATOS->CON_TEL1)								 							
-
-				cJson += '                {'
-				cJson += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL1) + '",'
-				cJson += '                    "tipo": "T" '
-				if ! Empty(CONTATOS->CIDTEL1)
-					cJson += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL1) + ' '
-				endif
-				cJson += '                } ' 
-				lJaTemTelefone := .T.
-			endif
-
-			if ! Empty(CONTATOS->CON_TEL2)
-
-				if lJaTemTelefone
-					cJson += ','
-				endif
-				cJson += '                {'
-				cJson += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL2) + '",'
-				cJson += '                    "tipo": "T" '
-				if ! Empty(CONTATOS->CIDTEL2)
-					cJson += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL2) + ' '
-				endif
-				cJson += '                } ' 
-				lJaTemTelefone := .T.
-			endif
-
-			if ! Empty(CONTATOS->CON_TEL3)
-
-				if lJaTemTelefone
-					cJson += ','
-				endif
-				cJson += '                {'
-				cJson += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL3) + '",'
-				cJson += '                    "tipo": "T" '
-				if ! Empty(CONTATOS->CIDTEL3)
-					cJson += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL3) + ' '
-				endif
-				cJson += '                } ' 
-				lJaTemTelefone := .T.
-			endif
-
-			if ! Empty(CONTATOS->CON_TEL4)
-
-				if lJaTemTelefone
-					cJson += ','
-				endif
-				cJson += '                {'
-				cJson += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL4) + '",'
-				cJson += '                    "tipo": "T" '
-				if ! Empty(CONTATOS->CIDTEL4)
-					cJson += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL4) + ' '
-				endif
-				cJson += '                } ' 
-				lJaTemTelefone := .T.
-			endif
-
-			if ! Empty(CONTATOS->CON_TEL5)
-
-				if lJaTemTelefone
-					cJson += ','
-				endif
-				cJson += '                {'
-				cJson += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL5) + '",'
-				cJson += '                    "tipo": "T" '
-				if ! Empty(CONTATOS->CIDTEL5)
-					cJson += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL5) + ' '
-				endif
-				cJson += '                } ' 
-				lJaTemTelefone := .T.
-			endif	
-
-			cJson += '                ],' // finaliza telefones
-
-			cJson += '                "cargo": "' + u_GwTiraGraf(CONTATOS->CON_cargo) + '",'
-			cJson += '                "nome": "' + u_GwTiraGraf(CONTATOS->CON_NOME) + '",'
-			cJson += '       		  "emails": ['
-
-			if ! Empty(AllTrim(CONTATOS->CON_emails))								
-				cJson += '            	  {'
-				cJson += '                	"email": "' + u_GwTiraGraf(CONTATOS->CON_emails) + '",'
-				cJson += '                	"tipo": "T" '
-				If ! Empty(CONTATOS->CON_IDMAIL)
-					cJson += '                	,"id": ' + u_GwTiraGraf(CONTATOS->CON_IDMAIL) + ''
-				endif
-				cJson += '            	  }'
-			endif
-			cJson += '        		  ],'
-
-			if ! Empty(CONTATOS->CON_id)
-				cJson += '                "id": ' + u_GwTiraGraf(CONTATOS->CON_id) + ','
-			endif
-			cJson += '                "excluido": ' + u_GwTiraGraf(CONTATOS->CON_excluido) + ''
-			cJson += '            }'
-			lJaTemContatos := .T.
-			CONTATOS->(DbSkip())
-		End
-		CONTATOS->(DbCloseArea())
-		cJson += '        ],' // Fim Contatos						
+		cJson += fAddContatos()
+							
 		cJson += '        "tipo": "' + u_GwTiraGraf(CLIENTES->tipo) + '",'
 		if ! Empty(AllTrim(CLIENTES->segmento_id))
 			cJson += '		"segmento_id":' + u_GwTiraGraf(CLIENTES->segmento_id) + ','
@@ -388,7 +245,7 @@ User Function fSincClientes(lJob)
 		cJson += '   "excluido": ' + u_GwTiraGraf(CLIENTES->excluido) + ' '
 		cJson += '}'
 
-		//MemoWrite("C:\temp\clientesParaAlterar.txt",cJson)
+		MemoWrite("C:\temp\clientesParaAlterar.txt",cJson)
 
 		if lAlteracao .And. ! Empty(CLIENTES->ID)
 
@@ -402,6 +259,10 @@ User Function fSincClientes(lJob)
 						
 			If "200" $ cCodHttp 		
 
+				IF AllTrim(cNewDtMod) > AllTrim(cA1_XULTALT)
+					cA1_XULTALT := cNewDtMod
+				Endif
+				
 				// Deve-se atualizar tambem registro deletados							
 				cQuery := "UPDATE "+RetSQLName("SA1")+" "
 				cQuery += " SET A1_XULTALT = '"+cNewDtMod+"' "							
@@ -434,6 +295,10 @@ User Function fSincClientes(lJob)
 						
 			If "201" $ cCodHttp .And. ! Empty(cId)		
 
+				IF AllTrim(cNewDtMod) > AllTrim(cA1_XULTALT)
+					cA1_XULTALT := cNewDtMod
+				Endif
+				
 				DbSelectArea("SA1")
 				SA1->(DbSetOrder(1))
 				if SA1->(DbSeek(xFilial("SA1") + CLIENTES->CODIGO + CLIENTES->LOJA ))
@@ -472,22 +337,44 @@ User Function fSincClientes(lJob)
 
 		endif
 
-		IF AllTrim(SA1->A1_XULTALT) > AllTrim(cNewDtMod)
-				cNewDtMod := SA1->A1_XULTALT
-		Endif
-		
 		// Relacionar a tabela de Preco com o Cliente		
 		CLIENTES->( DbSkip() )
 
 	End
 
-	// Atualiza com a datetime do ultimo cliente incluso
-//	if ! Empty(cNewDtMod)
-//		PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
-//	endif
+	if ! Empty(cNewDtMod)
+		PutMV("A1_XULTALT",cA1_XULTALT) // Atuaiza a ultima data/hora de sincronizacao
+	endif
 
-	// Busco clientes que foram alterados na API
-	aHttpGet := u_GetJson(cURLBase + "?alterado_apos=" + StrTran(AllTrim(GetMV("A1_XULTALT",,""))," ","%20"))
+	u_GwLog("meuspedidos.log","fSincClientes: Finalizada sincronizacao dos clientes. Ultima sincronizacao " + GetMV("A1_XULTALT",,"") )
+
+	FreeObj(oListaClientes)
+	FreeObj(oCliente)
+	CLIENTES->(DbCloseArea())
+Return
+
+
+/*
+
+	fGetNovosClientes - Obtem clientes que foram alterados na API e atualiza no Protheus
+	Diego Bueno - 30/072018
+	
+*/
+
+Static Function fGetNovosClientes()
+
+	Local cJson         := ""
+	Local cRetHead      := ""
+	Local cCodHttp      := ""
+	Local oListaClientes:= nil
+	Local oCliente      := Nil
+	Local aHttpGet      := {}
+	Local cMailNewCli   := ''
+	Local cAssNewCli    := ""
+	Local cMsg          := ""
+	Local cNewDtMod := GetMV("A1_XULTALT",,"")
+	
+	aHttpGet := u_GetJson(cURLBase + "?alterado_apos=" + StrTran(AllTrim(cNewDtMod)," ","%20"))
 	cJson    := aHttpGet[1]
 	cRetHead := aHttpGet[2]
 	cCodHttp := aHttpGet[3]
@@ -696,15 +583,183 @@ User Function fSincClientes(lJob)
 
 	Else
 		u_GwLog("meuspedidos.log","fSincClientes: Erro ao processar Json em FWJsonDeserialize para busca de clientes... "  )	
-	Endif		
+	Endif
+	
+	//2018-07-30 17:33:40
+	// add 1s para nao traser novamente estes clientes
+	cNewDtMod := SubStr(cNewDtMod,1,17) + StrZero( Val(SubStr(cNewDtMod,18,2)) + 1 ,2)			
+			
+Return(cNewDtMod)
 
-	if ! Empty(cNewDtMod)
-		PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
-	endif
 
-	u_GwLog("meuspedidos.log","fSincClientes: Finalizada sincronizacao dos clientes. Ultima sincronizacao " + GetMV("A1_XULTALT",,"") )
 
-	FreeObj(oListaClientes)
-	FreeObj(oCliente)
-	CLIENTES->(DbCloseArea())
-Return
+/*
+
+	fAddContatos - Adiciona no Json os contatos do cliente
+	Diego Bueno - 30/072018
+	
+*/
+
+Static Function fAddContatos()
+
+		Local cQuery := ''
+		Local cJsonContatos := ''
+		
+		cJsonContatos += '        "contatos": ['
+
+		// Busca todos contatos deste cliente
+		cQuery := " 		SELECT U5_CODCONT AS CONTATO, "			
+		cQuery += " 			ISNULL(U5_CONTAT, ' ') AS CON_NOME , " 
+		cQuery += " 			ISNULL(U5_XIDMPED, ' ') AS CON_id,  "
+		cQuery += " 			CASE WHEN ISNULL(U5_FONE, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FONE, ' ') ELSE '' END AS CON_TEL1, " 
+		cQuery += " 			ISNULL(U5_XIDFONE, ' ') AS CIDTEL1, "
+		cQuery += " 			CASE WHEN ISNULL(U5_CELULAR, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_CELULAR, ' ') ELSE '' END AS CON_TEL2, " 			 
+		cQuery += " 			ISNULL(U5_XIDCELU,' ') AS CIDTEL2, " 
+		cQuery += " 			CASE WHEN ISNULL(U5_FAX, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FAX, ' ') ELSE '' END AS CON_TEL3, " 			 
+		cQuery += " 			ISNULL(U5_XIDFAX, ' ') AS CIDTEL3,  "
+		cQuery += " 			CASE WHEN ISNULL(U5_FCOM1, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FCOM1, ' ') ELSE '' END AS CON_TEL4, " 			 	
+		cQuery += " 			ISNULL(U5_XIDFCO1, ' ') AS CIDTEL4,  "
+		cQuery += " 			CASE WHEN ISNULL(U5_FCOM2, ' ') <> ' ' THEN LTRIM(RTRIM(ISNULL(U5_DDD, ' '))) +' ' + ISNULL(U5_FCOM2, ' ') ELSE '' END AS CON_TEL5, " 			 	
+		cQuery += " 			ISNULL(U5_XIDFCO2, ' ') AS CIDTEL5, "
+		cQuery += " 			CASE WHEN LEN(U5_EMAIL) > 5 AND U5_EMAIL LIKE '%@%' "       		
+		cQuery += " 				AND U5_EMAIL NOT LIKE '%,%' AND U5_EMAIL  NOT LIKE '%;%' THEN ISNULL(U5_EMAIL, ' ') ELSE '' END AS CON_emails, "
+		cQuery += " 			ISNULL(U5_XIDMAIL, ' ') AS CON_IDMAIL, " 
+		cQuery += " 			ISNULL(UM_DESC,	' ') AS CON_cargo, "
+		cQuery += " 			CASE WHEN AC8.D_E_L_E_T_ = '*' THEN 'true' else 'false' END AS CON_excluido "
+		cQuery += " 	 FROM " + RetSQLName("SA1") + " SA1  "
+		cQuery += " 	 INNER JOIN " + RetSQLName("AC8") + " AC8 ON AC8_FILENT = A1_FILIAL AND AC8_CODENT = A1_COD + A1_LOJA "
+		cQuery += " 		AND AC8_ENTIDA = 'SA1' " // -- AND AC8.D_E_L_E_T_ = SA1.D_E_L_E_T_ "
+		cQuery += "      INNER JOIN " + RetSQLName("SU5") + " SU5 ON U5_FILIAL = AC8_FILIAL AND U5_CODCONT = AC8_CODCON "
+		cQuery += " 		AND AC8_ENTIDA = 'SA1' " //--AND AC8.D_E_L_E_T_ = SU5.D_E_L_E_T_ 
+		cQuery += " 	 LEFT JOIN " + RetSQLName("SUM") + " CARGO ON  UM_CARGO = U5_FUNCAO AND SU5.D_E_L_E_T_ = CARGO.D_E_L_E_T_ "
+		cQuery += "WHERE SA1.D_E_L_E_T_ <> '*' AND A1_COD = '" + CLIENTES->CODIGO + "' AND A1_LOJA = '" + CLIENTES->LOJA + "' "
+		cQuery += "	GROUP BY U5_CODCONT,U5_CONTAT,U5_DDD, "
+		cQuery += "		U5_XIDMPED,U5_FONE,U5_XIDFONE,U5_CELULAR,U5_XIDCELU,U5_FAX,U5_XIDFAX,U5_FCOM1, "
+		cQuery += "		U5_XIDFCO1,U5_FCOM2,U5_XIDFCO2,U5_EMAIL,U5_XIDMAIL,UM_DESC,AC8.D_E_L_E_T_ "
+		cQuery += "ORDER BY U5_CODCONT "
+
+		MemoWrite("C:\temp\contatos.txt",cQuery)
+
+		if Select("CONTATOS") > 0
+			CONTATOS->(DbCloseArea())
+		endif
+
+		TcQuery cQuery New Alias "CONTATOS"
+
+		lJaTemContatos := .F.				
+		cContAtual := ""
+						
+		While ! CONTATOS->(EOF()) 
+		
+			if cContAtual <> CONTATOS->CONTATO
+				lJaTemTelefone := .F.
+				cContAtual := CONTATOS->CONTATO
+			endif
+			
+			IF lJaTemContatos
+				cJsonContatos += ','
+			endif
+			cJsonContatos += '            {'	//abre contatos
+			cJsonContatos += '                "telefones": [ ' // inicializa telefones						
+
+			if ! Empty(CONTATOS->CON_TEL1)								 							
+
+				cJsonContatos += '                {'
+				cJsonContatos += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL1) + '",'
+				cJsonContatos += '                    "tipo": "T" '
+				if ! Empty(CONTATOS->CIDTEL1)
+					cJsonContatos += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL1) + ' '
+				endif
+				cJsonContatos += '                } ' 
+				lJaTemTelefone := .T.
+			endif
+
+			if ! Empty(CONTATOS->CON_TEL2)
+
+				if lJaTemTelefone
+					cJsonContatos += ','
+				endif
+				cJsonContatos += '                {'
+				cJsonContatos += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL2) + '",'
+				cJsonContatos += '                    "tipo": "T" '
+				if ! Empty(CONTATOS->CIDTEL2)
+					cJsonContatos += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL2) + ' '
+				endif
+				cJsonContatos += '                } ' 
+				lJaTemTelefone := .T.
+			endif
+
+			if ! Empty(CONTATOS->CON_TEL3)
+
+				if lJaTemTelefone
+					cJsonContatos += ','
+				endif
+				cJsonContatos += '                {'
+				cJsonContatos += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL3) + '",'
+				cJsonContatos += '                    "tipo": "T" '
+				if ! Empty(CONTATOS->CIDTEL3)
+					cJsonContatos += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL3) + ' '
+				endif
+				cJsonContatos += '                } ' 
+				lJaTemTelefone := .T.
+			endif
+
+			if ! Empty(CONTATOS->CON_TEL4)
+
+				if lJaTemTelefone
+					cJsonContatos += ','
+				endif
+				cJsonContatos += '                {'
+				cJsonContatos += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL4) + '",'
+				cJsonContatos += '                    "tipo": "T" '
+				if ! Empty(CONTATOS->CIDTEL4)
+					cJsonContatos += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL4) + ' '
+				endif
+				cJsonContatos += '                } ' 
+				lJaTemTelefone := .T.
+			endif
+
+			if ! Empty(CONTATOS->CON_TEL5)
+
+				if lJaTemTelefone
+					cJsonContatos += ','
+				endif
+				cJsonContatos += '                {'
+				cJsonContatos += '                    "numero": "' + u_GwTiraGraf(CONTATOS->CON_TEL5) + '",'
+				cJsonContatos += '                    "tipo": "T" '
+				if ! Empty(CONTATOS->CIDTEL5)
+					cJsonContatos += '                    ,"id": ' + u_GwTiraGraf(CONTATOS->CIDTEL5) + ' '
+				endif
+				cJsonContatos += '                } ' 
+				lJaTemTelefone := .T.
+			endif	
+
+			cJsonContatos += '                ],' // finaliza telefones
+
+			cJsonContatos += '                "cargo": "' + u_GwTiraGraf(CONTATOS->CON_cargo) + '",'
+			cJsonContatos += '                "nome": "' + u_GwTiraGraf(CONTATOS->CON_NOME) + '",'
+			cJsonContatos += '       		  "emails": ['
+
+			if ! Empty(AllTrim(CONTATOS->CON_emails))								
+				cJsonContatos += '            	  {'
+				cJsonContatos += '                	"email": "' + u_GwTiraGraf(CONTATOS->CON_emails) + '",'
+				cJsonContatos += '                	"tipo": "T" '
+				If ! Empty(CONTATOS->CON_IDMAIL)
+					cJsonContatos += '                	,"id": ' + u_GwTiraGraf(CONTATOS->CON_IDMAIL) + ''
+				endif
+				cJsonContatos += '            	  }'
+			endif
+			cJsonContatos += '        		  ],'
+
+			if ! Empty(CONTATOS->CON_id)
+				cJsonContatos += '                "id": ' + u_GwTiraGraf(CONTATOS->CON_id) + ','
+			endif
+			cJsonContatos += '                "excluido": ' + u_GwTiraGraf(CONTATOS->CON_excluido) + ''
+			cJsonContatos += '            }'
+			lJaTemContatos := .T.
+			CONTATOS->(DbSkip())
+		End
+		CONTATOS->(DbCloseArea())
+		cJsonContatos += '        ],' // Fim Contatos	
+
+Return(cJsonContatos)
