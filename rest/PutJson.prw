@@ -147,7 +147,7 @@ User Function PutJson(cUrlBase,cJson)
 
 	Else
 		cMsg := "PutJson: Falha de comunicacao com API, resposta inválida do HttpPut " +  cUrlRoot + cUrlBase + cEOL + cEOL ;
-					+ " Erro Retornado: " + sPostRet + cEOL + cEOL //;
+					+ " Erro Retornado: " + sPutRet + cEOL + cEOL //;
 					//+ " Json enviado: " + cJson
 					
 		u_fGravaMeusPedidos( { "PutJson", cHttpCod, u_GwTiraGraf(sPutRet),u_GwTiraGraf(cHeaderRet),cNewID,cDateRet,u_GwTiraGraf(cMsg),.F.} )
