@@ -25,7 +25,7 @@ User Function fExecPed(oPedido,cNewDtMod)
 	local cTpOp := ""
 	local cGerFin := ""
 	local nPosGer := 0
-
+	
 	private cRisco := ""
 	PRIVATE lMsErroAuto := .F. 
 	Private cMailResp     :=""
@@ -173,6 +173,7 @@ Static Function fCab(oPedido,cTpPed,cGerFin)
 	local cDtUlt := ""
 	local cId := ""
 	local cDtEmi := ""
+	local cFormPag := ""
 
 	//local cVNome := ""
 

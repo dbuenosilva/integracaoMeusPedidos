@@ -64,13 +64,14 @@ User Function fSincPedidos(lJob)
 
 			for	xCount := 1 to Len(oPedido)
 				aRet := U_fExecPed(oPedido[xCount],cNewDtMod)
+				if !Empty(aRet)
+					if !Empty(aRet[1])
+						PutMV("C5_XULTALT",aRet[2]) // Atuaiza a ultima data/hora de sincronizacao
+					endif
+				endif
 			next xCount
 
-			if !Empty(aRet)
-				if (aRet[1])
-					cNewDtMod := aRet[2]	
-				endif
-			endif
+			
 		else
 			cHtml := "fSincPedidosA: Erro ao processar FWJsonDeserialize do Pedido de Vendas " ;
 			+ " com Json: " + cJson   
@@ -80,9 +81,7 @@ User Function fSincPedidos(lJob)
 
 	endif
 
-	if ! Empty(cNewDtMod)
-		PutMV("C5_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
-	endif
+
 
 	u_GwLog("meuspedidos.log","fSincPedidos: Finalizada sincronizacao dos Pedidos. Ultima sincronizacao " + GetMV("C5_XULTALT",,"") )
 
@@ -281,11 +280,11 @@ Static Function fMontaJson(Filial,cNum,cCliente,cLoja,cDtEmi, cVend,cCondPag,cDt
 	cCondId := U_fGetCond(cCondPag,2)
 	//cCondPag := 
 	if(alltrim(cNat) =='10106')
-		cTpPedId := fGetTpPed("BONIFICACAO",2)
+		cTpPedId := U_fGetTpPed("BONIFICACAO",2)
 	elseif alltrim(cNat) == '10107'
-		cTpPedId := fGetTpPed("AMOSTRA",2)
+		cTpPedId := U_fGetTpPed("AMOSTRA",2)
 	elseif alltrim(cNat) == 'DEV./TROCA'
-		cTpPedId := fGetTpPed("TROCA",2)
+		cTpPedId := U_fGetTpPed("TROCA",2)
 	else
 		cTpPedId := 'null'
 	endif
