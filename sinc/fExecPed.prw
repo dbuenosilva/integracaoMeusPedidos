@@ -82,10 +82,10 @@ User Function fExecPed(oPedido,cNewDtMod)
 	//Pegar o gera financeiro atualizado para montar os tipos de operacao
 	nPosGer := aScan(aCabec,{|x| x[1] == "C5_XGERFIN"})
 	cGerfin := aCabec[nPosGer][2]
-	
-	
+
+
 	//Tipo de Operação 15-Orçamento/14-VENDA/06-BONIFICACAO
-	if(alltrim(aCabec) == '1')
+	if(alltrim(cGerfin) == '1')
 		cTpOp := '15'
 	elseif cTpPed == "BONIFICACAO"
 		cTpOp := '06'
@@ -181,31 +181,27 @@ Static Function fCab(oPedido,cTpPed,cGerFin)
 
 	if cTpPed == "BONIFICACAO"
 		cNat := alltrim(getMV("MV_XNATB",,"10106"))
-		cCondPag := alltrim(getMV("MV_XCONB",,"155"))
+		cCondPag := alltrim(getMV("MV_XCONB",,"023"))
+		cFormPag := alltrim(getMv("MV_XFORB",,"FID"))
 	elseif cTpPed == "AMOSTRA"
 		cGerFin := '1'
 		cNat := alltrim(getMV("MV_XNATA",,"10107"))
 		cCondPag := alltrim(getMV("MV_XCONA",,"248"))
+		cFormPag := alltrim(getMv("MV_XFORA",,"CO"))
 	elseif cTpPed == "TROCA"
 		cGerFin := '1'
 		cNat := alltrim(getMV("MV_XNATT",,"DEV./TROCA"))
 		cCondPag := alltrim(getMV("MV_XCONT",,"012"))
+		cFormPag := alltrim(getMv("MV_XFORT",,"FID"))
 	else
 		cNat := alltrim(getMV("MV_XNATV",,"10101"))
 	endif
 
-
-
-	cFormPag := fGetForm(allTrim(cValtoChar(oPedido:FORMA_PAGAMENTO_ID)))
 	if Empty(cFormPag)
-		cLog := "fExecPed: Erro ao carregar a forma de pagamento do pedido " + cNumMP
-		u_GwLog("meuspedidos.log",cLog)
-		u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog)
-		return {}
+		cFormPag := fGetForm(allTrim(cValtoChar(oPedido:FORMA_PAGAMENTO_ID)))
 	endif
 
 	cDtEmi := alltrim(cValtoChar(oPedido:DATA_EMISSAO))
-
 
 	TempEnt := fCmpExt(oPedido:EXTRAS,"C5_FECENT")
 	dDataEnt := StoD(subStr(TempEnt,1,4)+ subStr(TempEnt,6,2) + subStr(TempEnt,9,2))
@@ -299,6 +295,10 @@ Static Function fCab(oPedido,cTpPed,cGerFin)
 			cCondPag := SA1->A1_CONDPAG
 		endif
 
+		if Empty(cFormPag)
+			cFormPag := SA1->A1_XFORPG
+		endif
+
 		cTabPrc := SA1->A1_TABELA
 		cRota:= SA1->A1_REGIAO
 		cDesRota:= SA1->A1_XDESCRO
@@ -312,6 +312,13 @@ Static Function fCab(oPedido,cTpPed,cGerFin)
 
 	if Empty(cCondPag)
 		cLog := "fExecPed: Condicao de pagamento em branco para gravar o Pedido " + cNumMP	
+		u_GwLog("meuspedidos.log",cLog)
+		u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog)
+		return {}
+	endif
+
+	if Empty(cFormPag)
+		cLog := "fExecPed: Erro ao carregar a forma de pagamento do pedido " + cNumMP
 		u_GwLog("meuspedidos.log",cLog)
 		u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cLog)
 		return {}
@@ -370,9 +377,9 @@ static function fGetForm(cId)
 	endif
 
 
-	return cFormPag
+return cFormPag
 
-	static function fItens(Itens,cTpOp)
+static function fItens(Itens,cTpOp)
 	local aItens := {}
 	local aLinha := {}
 	local xCount := 1
