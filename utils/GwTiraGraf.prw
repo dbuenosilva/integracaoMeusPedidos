@@ -15,7 +15,8 @@
 User Function GwTiraGraf(sOrig)
 Private sRet 	  := ""  
 Default sOrig := "" 
-sRet := sOrig
+
+sRet := DecodeUtf8(sOrig)
    sRet = strtran (sRet, "·", " ")
    sRet = strtran (sRet, "È", "E")
    sRet = strtran (sRet, "Ì", "I")

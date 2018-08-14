@@ -63,7 +63,7 @@ User Function GetJson(cUrlBase)
 	oRestClient := FWRest():New(cUrlRoot + cUrlBase)
 	oRestClient:setPath("")
 	oRestClient:Get(aHeader) 
-	sGetRet     := EnCodeUtf8(AllTrim(oRestClient:GetResult()))
+	sGetRet     := EnCodeUtf8(u_GwTiraGraf(AllTrim(oRestClient:GetResult())))
 	cHeaderRet  := oRestClient:ORESPONSEH:CREASON
 	cHttpCod    := oRestClient:ORESPONSEH:CSTATUSCODE
 
@@ -81,7 +81,7 @@ User Function GetJson(cUrlBase)
 
 			oRestClient:Get(aHeader)	
 
-			sGetRet     := EnCodeUtf8(AllTrim(oRestClient:GetResult()))
+			sGetRet     := EnCodeUtf8(u_GwTiraGraf(AllTrim(oRestClient:GetResult())))
 			cHeaderRet  := oRestClient:ORESPONSEH:CREASON
 			cHttpCod    := oRestClient:ORESPONSEH:CSTATUSCODE
 
@@ -99,16 +99,16 @@ User Function GetJson(cUrlBase)
 	if cHttpCod == "200"		
 		u_GwLog("meuspedidos.log","GetJson: HttpCode => " + cHttpCod )
 		u_GwLog("meuspedidos.log","GetJson: Message  => " + cHeaderRet )	  
-		u_GwLog("meuspedidos.log","GetJson: Body     => "  + u_GwTiraGraf(sGetRet))
+		u_GwLog("meuspedidos.log","GetJson: Body     => "  + sGetRet)
 	Else
 		cMsg := "GetJson: Falha de comunicacao com API, resposta inválida do HttpGet " + cUrlRoot + cUrlBase
 
-		u_fGravaMeusPedidos( { "GetJson", cHttpCod, u_GwTiraGraf(sGetRet),u_GwTiraGraf(cHeaderRet),"","",u_GwTiraGraf(cMsg),.F.} )
+		u_fGravaMeusPedidos( { "GetJson", cHttpCod, sGetRet,cHeaderRet,"","",cMsg,.F.} )
 
 		u_GwLog("meuspedidos.log",cMsg + ;	
 		" HttpCode: " + iif ( Valtype(cHttpCod) == "C",cHttpCod,"" ) + ;
 		" Error: " + iif ( Valtype(cHeaderRet) == "C",cHeaderRet,"" ) + ;
-		" Result: " + iif ( Valtype(sGetRet) == "C", u_GwTiraGraf(sGetRet),"" ) )	
+		" Result: " + iif ( Valtype(sGetRet) == "C", sGetRet,"" ) )	
 		sGetRet := " { } "    
 	EndIf
 
