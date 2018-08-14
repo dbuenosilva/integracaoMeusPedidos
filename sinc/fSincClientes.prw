@@ -274,7 +274,7 @@ User Function fSincClientes(lJob)
 					u_GwSendMail(cMailResp," ","Inconsistência na integração MeusPedidos x Protheus",cHtml)		
 				else
 					if ! Empty(cNewDtMod)
-						PutMV("A1_XULTALT",cA1_XULTALT) // Atuaiza a ultima data/hora de sincronizacao
+						PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
 					endif						
 				endif			
 
@@ -324,7 +324,7 @@ User Function fSincClientes(lJob)
 						u_GwSendMail(cMailResp," ","Inconsistência na integração MeusPedidos x Protheus",cHtml)
 					else
 						if ! Empty(cNewDtMod)
-							PutMV("A1_XULTALT",cA1_XULTALT) // Atuaiza a ultima data/hora de sincronizacao
+							PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
 						endif	
 					endif	
 
@@ -351,7 +351,7 @@ User Function fSincClientes(lJob)
 	End
 
 	if ! Empty(cNewDtMod)
-		PutMV("A1_XULTALT",cA1_XULTALT) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincClientes: Finalizada sincronizacao dos clientes. Ultima sincronizacao " + GetMV("A1_XULTALT",,"") )
@@ -588,7 +588,7 @@ Static Function fGetNovosClientes()
 			Endif
 
 			if ! Empty(cNewDtMod)
-				PutMV("A1_XULTALT",cA1_XULTALT) // Atuaiza a ultima data/hora de sincronizacao
+				PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
 			endif
 
 		Next
@@ -598,7 +598,7 @@ Static Function fGetNovosClientes()
 	Endif
 
 	//2018-07-30 17:33:40
-	// add 1s para nao traser novamente estes clientes
+	// add 1s para nao trazer novamente estes clientes
 	cNewDtMod := SubStr(cNewDtMod,1,17) + StrZero( Val(SubStr(cNewDtMod,18,2)) + 1 ,2)			
 
 Return(cNewDtMod)
