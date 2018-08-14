@@ -99,7 +99,7 @@ User Function GetJson(cUrlBase)
 	if cHttpCod == "200"		
 		u_GwLog("meuspedidos.log","GetJson: HttpCode => " + cHttpCod )
 		u_GwLog("meuspedidos.log","GetJson: Message  => " + cHeaderRet )	  
-		u_GwLog("meuspedidos.log","GetJson: Body     => "  + sGetRet)
+		u_GwLog("meuspedidos.log","GetJson: Body     => "  + u_GwTiraGraf(sGetRet))
 	Else
 		cMsg := "GetJson: Falha de comunicacao com API, resposta inválida do HttpGet " + cUrlRoot + cUrlBase
 
@@ -108,7 +108,7 @@ User Function GetJson(cUrlBase)
 		u_GwLog("meuspedidos.log",cMsg + ;	
 		" HttpCode: " + iif ( Valtype(cHttpCod) == "C",cHttpCod,"" ) + ;
 		" Error: " + iif ( Valtype(cHeaderRet) == "C",cHeaderRet,"" ) + ;
-		" Result: " + iif ( Valtype(sGetRet) == "C", sGetRet,"" ) )	
+		" Result: " + iif ( Valtype(sGetRet) == "C", u_GwTiraGraf(sGetRet),"" ) )	
 		sGetRet := " { } "    
 	EndIf
 
