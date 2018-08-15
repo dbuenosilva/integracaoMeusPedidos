@@ -118,7 +118,7 @@ User Function fSincCCondPgto(lJob)
 
 
 	if ! Empty(cNewDtMod)
-		PutMV("A1_XULTCPG",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("A1_XULTCPG",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincCliCondPgto: Finalizada sincronizacao das Cond.Pagto X Clientes. Ultima sincronizacao " + GetMV("A1_XULTCPG",,"") )

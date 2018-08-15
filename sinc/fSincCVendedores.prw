@@ -116,7 +116,7 @@ User Function fSincCVendedores(lJob)
 
 
 	if ! Empty(cNewDtMod)
-		PutMV("A1_XULTATV",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("A1_XULTATV",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincCVendedores: Finalizada sincronizacao dos Vendedores x Clientes. Ultima sincronizacao " + GetMV("A1_XULTATV",,"") )

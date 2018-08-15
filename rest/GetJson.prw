@@ -63,7 +63,7 @@ User Function GetJson(cUrlBase)
 	oRestClient := FWRest():New(cUrlRoot + cUrlBase)
 	oRestClient:setPath("")
 	oRestClient:Get(aHeader) 
-	sGetRet     := EnCodeUtf8(fGTiraGraf(AllTrim(oRestClient:GetResult())))
+	sGetRet     := fGTiraGraf(AllTrim(oRestClient:GetResult()))
 	cHeaderRet  := oRestClient:ORESPONSEH:CREASON
 	cHttpCod    := oRestClient:ORESPONSEH:CSTATUSCODE
 
@@ -81,7 +81,7 @@ User Function GetJson(cUrlBase)
 
 			oRestClient:Get(aHeader)	
 
-			sGetRet     := EnCodeUtf8(u_GwTiraGraf(AllTrim(oRestClient:GetResult())))
+			sGetRet     := fGTiraGraf(AllTrim(oRestClient:GetResult()))
 			cHeaderRet  := oRestClient:ORESPONSEH:CREASON
 			cHttpCod    := oRestClient:ORESPONSEH:CSTATUSCODE
 

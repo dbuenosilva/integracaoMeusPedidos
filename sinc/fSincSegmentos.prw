@@ -224,7 +224,7 @@ User Function fSincSegmentos(lJob)
 	End
 
 	if ! Empty(cNewDtMod)
-		PutMV("X5_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("X5_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","FAT005: Finalizada sincronizacao dos segmentos de cliente. Ultima sincronizacao " + GetMV("X5_XULTALT",,"") )

@@ -33,7 +33,9 @@ User Function fExecPed(oPedido,cNewDtMod)
 
 	default oPedido := {}
 	default cNewDtMod := ""
-
+	
+	cMailResp     := AllTrim(GetMV("MV_GWMAILR",,""))
+	
 	if Empty(oPedido)
 		cLog := "fExecPed: Erro Objeto oPedido retornado vazio de MeusPedidos..."
 		u_GwLog("meuspedidos.log",cLog)
@@ -42,7 +44,7 @@ User Function fExecPed(oPedido,cNewDtMod)
 		return {}
 	endif
 
-	cMailResp     := AllTrim(GetMV("MV_GWMAILR",,""))
+	
 	cNumMP := alltrim(cValtoChar(oPedido:NUMERO))
 	u_GwLog("meuspedidos.log","fExecPed: Iniciando escrita do Pedido Numero " + cNumMP +" no ERP.")
 

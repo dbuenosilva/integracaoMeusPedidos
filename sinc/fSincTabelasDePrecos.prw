@@ -243,7 +243,7 @@ User Function fSincTabelasDePrecos(lJob)
 	End
 
 	if ! Empty(cNewDtMod)
-		PutMV("DA0_XULTAL",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("DA0_XULTAL",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","FAT005: Finalizada sincronizacao dos Cabecalhos das Tabelas de Preco. Ultima sincronizacao " + GetMV("DA0_XULTAL",,"") )
@@ -501,7 +501,7 @@ User Function fSincItens(lJob)
 
 
 	if ! Empty(cNewDtMod)
-		PutMV("DA1_XULTAL",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("DA1_XULTAL",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","FAT005: Finalizada sincronizacao dos Itens das Tabelas de Preco. Ultima sincronizacao " + GetMV("DA1_XULTAL",,"") )

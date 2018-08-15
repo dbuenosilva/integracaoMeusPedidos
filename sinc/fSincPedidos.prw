@@ -66,7 +66,7 @@ User Function fSincPedidos(lJob)
 				aRet := U_fExecPed(oPedido[xCount],cNewDtMod)
 				if !Empty(aRet)
 					if !Empty(aRet[1])
-						PutMV("C5_XULTALT",aRet[2]) // Atuaiza a ultima data/hora de sincronizacao
+						PutMV("C5_XULTALT",u_fValidTime(aRet[2])) // Atuaiza a ultima data/hora de sincronizacao
 					endif
 				endif
 			next xCount
@@ -110,7 +110,7 @@ User Function fSincPedidos(lJob)
 	enddo
 
 	if ! Empty(cNewDtMod)
-		PutMV("C5_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("C5_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincPedidos: Finalizada sincronizacao dos Pedidos de Vendas. Atualizado C5_XULTALT para " + AllTrim(GetMV("C5_XULTALT",,"")))

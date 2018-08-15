@@ -118,7 +118,7 @@ User Function fSincCTabPreco(lJob)
 
 
 	if ! Empty(cNewDtMod)
-		PutMV("A1_XULTABE",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("A1_XULTABE",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincCTabPreco: Finalizada sincronizacao das Tabelas de Preco X Clientes. Ultima sincronizacao " + GetMV("A1_XULTABE",,"") )
