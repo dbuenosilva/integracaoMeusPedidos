@@ -414,7 +414,7 @@ Static Function fGetNovosClientes()
 			endif
 
 			SA1->A1_FILIAL :=  xFilial("SA1")
-			SA1->A1_MSBLQL := '1'						
+			//SA1->A1_MSBLQL := '1'						
 			SA1->A1_NOME   := u_GwTiraGraf(oCliente:razao_social) 			
 			SA1->A1_NREDUZ := u_GwTiraGraf(oCliente:nome_fantasia)
 			SA1->A1_PESSOA := u_GwTiraGraf(oCliente:tipo)
