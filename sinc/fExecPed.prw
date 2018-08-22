@@ -25,7 +25,7 @@ User Function fExecPed(oPedido,cNewDtMod)
 	local cTpOp := ""
 	local cGerFin := ""
 	local nPosGer := 0
-	
+
 	private cRisco := ""
 	PRIVATE lMsErroAuto := .F. 
 	Private cMailResp     :=""
@@ -341,7 +341,7 @@ Static Function fCab(oPedido,cTpPed,cGerFin)
 	aAdd(aCab,{"C5_VEND1",cVend,Nil})
 	aAdd(aCab,{"C5_TPFRETE",cTpTransp,NIL})
 	aAdd(aCab,{"C5_XOBS",cOBS,Nil})
-	aAdd(aCab,{"C5_FECENT",dDataEnt,Nil})//Onde buscar a data de entrega????
+	aAdd(aCab,{"C5_FECENT",dDataEnt,Nil})
 	aAdd(aCab,{"C5_XROTA",cRota,Nil})
 	aAdd(aCab,{"C5_XDROTA",cDesRota,Nil})
 	aAdd(aCab,{"C5_XFORPG",cFormPag,Nil})
@@ -450,7 +450,7 @@ static function fVerInc(cId)
 	cQuery := "SELECT SC5.C5_XIDMPED, SC5.C5_FILIAL, SC5.C5_NUM," + cEol
 	cQuery += "CASE WHEN D_E_L_E_T_ = '*' THEN '.T.' WHEN D_E_L_E_T_ = '' THEN '.F.' END AS DELETADO" + cEol
 	cQuery += "FROM SC5010 SC5" + cEol
-	cQuery += "WHERE SC5.C5_XIDMPED <> ''"
+	cQuery += "WHERE SC5.C5_XIDMPED = '"+cId+"'"
 
 	MemoWrite("C:\temp\fVerInc.sql",cQuery)
 
@@ -465,17 +465,15 @@ static function fVerInc(cId)
 	DbSelectArea("VERPED")
 	VERPED->(dbGoTop())
 
-	While (VERPED->(!EoF()))
-		if(alltrim(VERPED->C5_XIDMPED) == alltrim(cId))
-			lEscreve := .F.
-			if(VERPED->DELETADO == '.T.')
-				u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(VERPED->C5_NUM) + " e esta deletado.")
-			elseif(VERPED->DELETADO == '.F.')			 	
-				u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(VERPED->C5_NUM))
-			endif
+	if (VERPED->(!EoF()))
+		lEscreve := .F.
+		if(VERPED->DELETADO == '.T.')
+			u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(VERPED->C5_NUM) + " e esta deletado.")
+		elseif(VERPED->DELETADO == '.F.')			 	
+			u_GwLog("meuspedidos.log","fExecPed: Pedido de Id:" +alltrim(cId)+ " ja existe no sistema numero :"+alltrim(VERPED->C5_NUM))
 		endif
-		VERPED->(DbSkip())
-	enddo
+
+	endif
 
 return lEscreve
 
