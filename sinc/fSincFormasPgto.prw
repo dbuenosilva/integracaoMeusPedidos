@@ -218,7 +218,7 @@ User Function fSincFormasPgto(lJob)
 	End
 
 	if ! Empty(cNewDtMod)
-		PutMV("X5_XULTFOR",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("X5_XULTFOR",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincFormasPgto: Finalizada sincronizacao da Formas de Pagamento. Ultima sincronizacao " + GetMV("X5_XULTFOR",,"") )

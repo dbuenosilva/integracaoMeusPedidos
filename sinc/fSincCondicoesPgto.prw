@@ -222,7 +222,7 @@ User Function fSincCondicoesPgto(lJob)
 	End
 
 	if ! Empty(cNewDtMod)
-		PutMV("E4_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("E4_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincCondicoesPgto: Finalizada sincronizacao das Condicoes de Pagamento. Ultima sincronizacao " + GetMV("E4_XULTALT",,"") )

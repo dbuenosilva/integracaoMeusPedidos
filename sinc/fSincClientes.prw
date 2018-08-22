@@ -66,11 +66,11 @@ User Function fSincClientes(lJob)
 	// Obtem lista de clientes alterados no Protheus para serem atualizados em Meus Pedidos 
 	cQuery += " SELECT A1_COD AS CODIGO, A1_LOJA AS LOJA,"
 	//		-- TELFONES	
-	cQuery += " CASE WHEN A1_TEL <> ' ' THEN LTRIM(RTRIM(A1_DDD)) + ' ' + A1_TEL ELSE ' ' END AS tel1_numero," 		 				
+	cQuery += " CASE WHEN A1_TEL <> ' ' THEN A1_TEL ELSE ' ' END AS tel1_numero," 		 				
 	cQuery += " A1_XIDFONE AS tel1_id,"		
-	cQuery += " CASE WHEN A1_FAX <> ' ' THEN LTRIM(RTRIM(A1_DDD)) + ' ' + A1_FAX ELSE ' ' END AS tel2_numero," 		
+	cQuery += " CASE WHEN A1_FAX <> ' ' THEN A1_FAX ELSE ' ' END AS tel2_numero," 		
 	cQuery += " A1_XIDFAX AS tel2_id,"
-	cQuery += " CASE WHEN A1_TELEX <> ' ' THEN LTRIM(RTRIM(A1_DDD)) + ' ' + A1_TELEX ELSE ' ' END AS tel3_numero," 		
+	cQuery += " CASE WHEN A1_TELEX <> ' ' THEN A1_TELEX ELSE ' ' END AS tel3_numero," 		
 	cQuery += " A1_XIDTELE AS tel3_id,"				 
 	//		-- demais campos	
 	cQuery += " A1_CGC AS cnpj," 		
@@ -173,7 +173,7 @@ User Function fSincClientes(lJob)
 		lJaTemTelefone := .F.
 		if ! Empty( CLIENTES->tel1_numero )
 			cJson += '            {'
-			cJson += '                "numero": "' + u_GwTiraGraf(CLIENTES->tel1_numero) + '",'
+			cJson += '                "numero": "' + left(u_GwTiraGraf(CLIENTES->tel1_numero),30) + '",'
 			cJson += '                "tipo": "T" '
 			if ! Empty ( CLIENTES->tel1_id )
 				cJson += '                ,"id": ' + u_GwTiraGraf(CLIENTES->tel1_id) + ''
@@ -186,7 +186,7 @@ User Function fSincClientes(lJob)
 				cJson += ','
 			endif
 			cJson += '            {'
-			cJson += '                "numero": "' + u_GwTiraGraf(CLIENTES->tel2_numero) + '",'
+			cJson += '                "numero": "' + left(u_GwTiraGraf(CLIENTES->tel2_numero),30) + '",'
 			cJson += '                "tipo": "T" '
 			if ! Empty ( CLIENTES->tel2_id )
 				cJson += '                ,"id": ' + u_GwTiraGraf(CLIENTES->tel2_id) + ''
@@ -199,7 +199,7 @@ User Function fSincClientes(lJob)
 				cJson += ','
 			endif
 			cJson += '            {'
-			cJson += '                "numero": "' + u_GwTiraGraf(CLIENTES->tel3_numero) + '",'
+			cJson += '                "numero": "' + left(u_GwTiraGraf(CLIENTES->tel3_numero),30) + '",'
 			cJson += '                "tipo": "T" '
 			if ! Empty ( CLIENTES->tel3_id )
 				cJson += '                ,"id": ' + u_GwTiraGraf(CLIENTES->tel3_id) + ''
@@ -274,7 +274,7 @@ User Function fSincClientes(lJob)
 					u_GwSendMail(cMailResp," ","Inconsistência na integração MeusPedidos x Protheus",cHtml)		
 				else
 					if ! Empty(cNewDtMod)
-						PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+						PutMV("A1_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 					endif						
 				endif			
 
@@ -324,7 +324,7 @@ User Function fSincClientes(lJob)
 						u_GwSendMail(cMailResp," ","Inconsistência na integração MeusPedidos x Protheus",cHtml)
 					else
 						if ! Empty(cNewDtMod)
-							PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+							PutMV("A1_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 						endif	
 					endif	
 
@@ -351,7 +351,7 @@ User Function fSincClientes(lJob)
 	End
 
 	if ! Empty(cNewDtMod)
-		PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("A1_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincClientes: Finalizada sincronizacao dos clientes. Ultima sincronizacao " + GetMV("A1_XULTALT",,"") )
@@ -588,7 +588,7 @@ Static Function fGetNovosClientes()
 			Endif
 
 			if ! Empty(cNewDtMod)
-				PutMV("A1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+				PutMV("A1_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 			endif
 
 		Next

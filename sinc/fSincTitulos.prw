@@ -51,7 +51,7 @@ User Function fSincTitulos(lJob)
 	//MsgInfo(" alterado_apos=" + StrTran(AllTrim(GetMV("C5_XULTALT",,""))," ","%20"))
 
 	if ! Empty(cNewDtMod)
-		PutMV("E1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("E1_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincTitulos: Finalizada sincronizacao dos Titulos Vencidos. Ultima sincronizacao " + GetMV("E1_XULTALT",,"") )

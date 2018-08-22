@@ -344,7 +344,7 @@ User Function fSincProdutos(lJob)
 	*/
 
 	if ! Empty(cNewDtMod)
-		PutMV("B1_XULTALT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("B1_XULTALT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","FAT005: Finalizada sincronizacao dos produtos. Ultima sincronizacao " + GetMV("B1_XULTALT",,"") )

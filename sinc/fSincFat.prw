@@ -49,7 +49,7 @@ User Function fSincFat(lJob)
 	enddo
 
 	if ! Empty(cNewDtMod)
-		PutMV("MV_XULTFAT",cNewDtMod) // Atuaiza a ultima data/hora de sincronizacao
+		PutMV("MV_XULTFAT",u_fValidTime(cNewDtMod)) // Atuaiza a ultima data/hora de sincronizacao
 	endif
 
 	u_GwLog("meuspedidos.log","fSincFat: Finalizada sincronizacao dos Faturamentos. Ultima sincronizacao " + GetMV("MV_XULTFAT",,"") )
