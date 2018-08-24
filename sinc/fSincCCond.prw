@@ -62,7 +62,7 @@ User Function fSincCCondPgto(lJob)
 	cQuery += " 		AND (A1_XULTCPG = ' ' OR A1_XULTCPG > '" + cA1_XULTCPG + "') " 
 
 	//cQuery := ChangeQuery(cQuery)
-	MemoWrite("C:\temp\CONDCLI.txt",cQuery)
+//	MemoWrite("C:\temp\CONDCLI.txt",cQuery)
 
 	if Select("CONDCLI") > 0
 		CONDCLI->(DbCloseArea())
@@ -77,10 +77,10 @@ User Function fSincCCondPgto(lJob)
 
 		cJson := '{'
 		cJson += '	"cliente_id": ' + AllTrim(CONDCLI->cliente_id) + ','
-		cJson += '  "condicoes_pagamento_liberadas": [ ' + AllTrim(CONDCLI->condicoes_pagamento_liberadas) + ' ]'			 
-		cJson += '}'							
+		cJson += '  "condicoes_pagamento_liberadas": [ 124036 , ' + AllTrim(CONDCLI->condicoes_pagamento_liberadas) + ' ]'			 
+		cJson += '}'							//124036 é a condicao 001-A vista 1D, liberada para todos clientes                  
 
-		MemoWrite("C:\temp\CONDCLI.json",cJson)
+		//MemoWrite("C:\temp\CONDCLI.json",cJson)
 
 		// Inclui nova Item da Tabela em Meus Pedidos
 		aHttpPost		:= u_PostJson(cUrlBase,cJson)

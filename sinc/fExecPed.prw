@@ -30,6 +30,7 @@ User Function fExecPed(oPedido,cNewDtMod)
 	PRIVATE lMsErroAuto := .F. 
 	Private cMailResp     :=""
 	Private cNumMP := ""
+	Private dDataEnt := StoD("")
 
 	default oPedido := {}
 	default cNewDtMod := ""
@@ -171,7 +172,6 @@ Static Function fCab(oPedido,cTpPed,cGerFin)
 	local cCondPag := ""
 	local cTranFob := alltrim(GetMV("MV_XMPFOB",,""))
 	local cNat := ""
-	local dDataEnt := StoD("")
 	local cDtUlt := ""
 	local cId := ""
 	local cDtEmi := ""
@@ -438,6 +438,8 @@ static function fItens(Itens,cTpOp)
 		aadd(aLinha,{"C6_PRUNIT",PrUnit,Nil})    
 		aadd(aLinha,{"C6_VALOR",Valor,Nil})    
 		aadd(aLinha,{"C6_OPER",cTpOp,Nil})
+		aadd(aLinha,{"C6_ENTREG",dDataEnt,Nil})
+		
 		nItem += 1
 		ValTot += Itens[xCount]:SUBTOTAL
 		aAdd(aItens,aLinha)
@@ -454,7 +456,7 @@ static function fVerInc(cId)
 	cQuery += "FROM SC5010 SC5" + cEol
 	cQuery += "WHERE SC5.C5_XIDMPED = '"+cId+"'"
 
-	MemoWrite("C:\temp\fVerInc.sql",cQuery)
+	//MemoWrite("C:\temp\fVerInc.sql",cQuery)
 
 	cQuery := ChangeQuery(cQuery)
 
