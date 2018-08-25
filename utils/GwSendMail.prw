@@ -41,73 +41,79 @@ local nSMTPTime := GetMV("MV_RELTIME")            // Timeout SMTP
 local lSSL      := GetMV("MV_RELSSL")             // SSL
 Local lTLS		:= GetMV("MV_RELTLS")			  // TLS
 Local lAuth     := GetMV("MV_RELAUTH")			 //  Auth?
+Local lEnable     := GetMV("MV_GWSENDM",,.T.)			 //  Auth?
 
 Default cFile   := ''
 
-nPos := At(":",cSMTPAddr)
-if nPos > 0
-	cSMTPAddr := SubStr(cSMTPAddr,1,nPos - 1)
-endif
+IF lEnable
 
-nPos := At(":",cPopAddr)
-if nPos > 0
-	cPopAddr := SubStr(cPopAddr,1,nPos - 1)
-endif
-
-// Instancia um novo TMailManager
-oServer := tMailManager():New()    
-//oServer:set(lAuth)// Usa Auth?
-oServer:setUseSSL(lSSL)// SSL?
-oServer:SetUseTLS(lTLS)// TLS?
-oServer:init(cPopAddr, cSMTPAddr, cUser, cPass, cPOPPort, cSMTPPort)
-
-// Define o Timeout SMTP
-if oServer:SetSMTPTimeout(nSMTPTime) != 0  
-	MsgInfo("[ERROR]Falha ao definir timeout","SendMail")  
-	return .F.
-endif 
-
-// Conecta ao servidor
-nErr := oServer:smtpConnect()
-if nErr <> 0  
-	MsgInfo("[ERROR]Falha ao conectar: " + oServer:getErrorString(nErr),"SendMail")   
-	oServer:smtpDisconnect()  
-	return .F.
-endif  
-
-// Realiza autenticacao no servidor
-nErr := oServer:smtpAuth(cUser, cPass)
-if nErr <> 0  
-	MsgInfo("[ERROR]Falha ao autenticar: " + oServer:getErrorString(nErr),"SendMail")   
-	oServer:smtpDisconnect()  
-	return .F.
-
-endif
-
-// Cria uma nova mensagem (TMailMessage)
-oMessage 		  := tMailMessage():new()
-oMessage:clear()
-oMessage:cFrom    := AllTrim(GetMv("MV_RELFROM")) //Indica o endereço de uma conta de e-mail (remetente) para representar o e-mail enviado. Exemplo: usuario@provedor.com.br.
-oMessage:cTo      := AllTrim(GetMv("MV_RELFROM"))//cCC//pra quem vai o email //Indica o endereço de uma conta de e-mail que será utilizada para enviar o respectivo e-mail.
-oMessage:cCC      := cCC //AllTrim(GetMv("MV_RELFROM"))    //Indica o endereço de e-mail, na seção Com Cópia (CC), que receberá a mensagem.
-oMessage:cBCC     := cBcc    //Indica o endereço de e-mail, na seção Cópia Oculta, que receberá a mensagem.
-oMessage:cSubject := cAssunto   //Indica o assunto do e-mail. Caso não seja especificado, o assunto será enviado em branco.
-oMessage:cBody    := cBody    //Indica o conteúdo da mensagem que será enviada.
-if !Empty(cFile) .And. oMessage:AttachFile( cFile ) < 0
-	MsgInfo("[ERROR] Falha ao anexar arquivo " + cFile + ":" + oServer:getErrorString(nErr),"SendMail")  
-    return(.F.)
-endif
-
-// Envia a mensagem
-nErr := oMessage:send(oServer)
-
-if nErr <> 0  
-	MsgInfo("[ERROR]Falha ao enviar: " + oServer:getErrorString(nErr),"SendMail")  
-	oServer:smtpDisconnect()  
-	return(.F.)
+	nPos := At(":",cSMTPAddr)
+	if nPos > 0
+		cSMTPAddr := SubStr(cSMTPAddr,1,nPos - 1)
+	endif
 	
-endif
+	nPos := At(":",cPopAddr)
+	if nPos > 0
+		cPopAddr := SubStr(cPopAddr,1,nPos - 1)
+	endif
+	
+	// Instancia um novo TMailManager
+	oServer := tMailManager():New()    
+	//oServer:set(lAuth)// Usa Auth?
+	oServer:setUseSSL(lSSL)// SSL?
+	oServer:SetUseTLS(lTLS)// TLS?
+	oServer:init(cPopAddr, cSMTPAddr, cUser, cPass, cPOPPort, cSMTPPort)
+	
+	// Define o Timeout SMTP
+	if oServer:SetSMTPTimeout(nSMTPTime) != 0  
+		MsgInfo("[ERROR]Falha ao definir timeout","SendMail")  
+		return .F.
+	endif 
+	
+	// Conecta ao servidor
+	nErr := oServer:smtpConnect()
+	if nErr <> 0  
+		MsgInfo("[ERROR]Falha ao conectar: " + oServer:getErrorString(nErr),"SendMail")   
+		oServer:smtpDisconnect()  
+		return .F.
+	endif  
+	
+	// Realiza autenticacao no servidor
+	nErr := oServer:smtpAuth(cUser, cPass)
+	if nErr <> 0  
+		MsgInfo("[ERROR]Falha ao autenticar: " + oServer:getErrorString(nErr),"SendMail")   
+		oServer:smtpDisconnect()  
+		return .F.
+	
+	endif
+	
+	// Cria uma nova mensagem (TMailMessage)
+	oMessage 		  := tMailMessage():new()
+	oMessage:clear()
+	oMessage:cFrom    := AllTrim(GetMv("MV_RELFROM")) //Indica o endereço de uma conta de e-mail (remetente) para representar o e-mail enviado. Exemplo: usuario@provedor.com.br.
+	oMessage:cTo      := AllTrim(GetMv("MV_RELFROM"))//cCC//pra quem vai o email //Indica o endereço de uma conta de e-mail que será utilizada para enviar o respectivo e-mail.
+	oMessage:cCC      := cCC //AllTrim(GetMv("MV_RELFROM"))    //Indica o endereço de e-mail, na seção Com Cópia (CC), que receberá a mensagem.
+	oMessage:cBCC     := cBcc    //Indica o endereço de e-mail, na seção Cópia Oculta, que receberá a mensagem.
+	oMessage:cSubject := cAssunto   //Indica o assunto do e-mail. Caso não seja especificado, o assunto será enviado em branco.
+	oMessage:cBody    := cBody    //Indica o conteúdo da mensagem que será enviada.
+	if !Empty(cFile) .And. oMessage:AttachFile( cFile ) < 0
+		MsgInfo("[ERROR] Falha ao anexar arquivo " + cFile + ":" + oServer:getErrorString(nErr),"SendMail")  
+	    return(.F.)
+	endif
+	
+	// Envia a mensagem
+	nErr := oMessage:send(oServer)
+	
+	if nErr <> 0  
+		MsgInfo("[ERROR]Falha ao enviar: " + oServer:getErrorString(nErr),"SendMail")  
+		oServer:smtpDisconnect()  
+		return(.F.)
+		
+	endif
+	
+	// Disconecta do Servidor
+	oServer:smtpDisconnect()
+	
+Endif
 
-// Disconecta do Servidor
-oServer:smtpDisconnect()
 return(.T.)
