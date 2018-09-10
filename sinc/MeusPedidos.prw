@@ -31,21 +31,24 @@
 ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß*/
 
 User Function JobMeusPedidos()
+	local lPedAuto := GetMv("MV_XPEDAUT",,.F.)
+	
+	u_fSincGrpProdutos(.T.)
+	u_fSincProdutos(.T.)
+	u_fSincSegmentos(.T.)
+	u_fSincClientes(.T.)
+	u_fSincTabelasDePrecos(.T.)
+	u_fSincCondicoesPgto(.T.)
+	u_fSincFormasPgto(.T.)
 
-u_fSincGrpProdutos(.T.)
-u_fSincProdutos(.T.)
-u_fSincSegmentos(.T.)
-u_fSincClientes(.T.)
-u_fSincTabelasDePrecos(.T.)
-u_fSincCondicoesPgto(.T.)
-u_fSincFormasPgto(.T.)
-
-u_fSincCTabPreco(.T.) 
-u_fSincCCondPgto(.T.)
-u_fSincCVendedores(.T.) 
-u_fSincPedidos(.T.)
-U_fSincFat(.T.)
-// u_fSincTitulos()
+	u_fSincCTabPreco(.T.) 
+	u_fSincCCondPgto(.T.)
+	u_fSincCVendedores(.T.) 
+	if lPedAuto
+		u_fSincPedidos(.T.)
+	endif
+	U_fSincFat(.T.)
+	// u_fSincTitulos()
 
 Return
 
@@ -77,45 +80,45 @@ User Function MeusPedidos
 	dbSetOrder(1)
 	mBrowse( 6,1,22,75,cString,,,,,,aCores )
 
-Return NIL
+	Return NIL
 
 
-/*
-fGravaMeusPedidos
+	/*
+	fGravaMeusPedidos
 
-Grava erros de comunicacao na tabela ZZ1
+	Grava erros de comunicacao na tabela ZZ1
 
-estrutura de aDados:
-*/
-#DEFINE ROTINA  1
-#DEFINE HTTPCOD 2
-#DEFINE RETORNO 3
-#DEFINE HEADER  4
-#DEFINE IDMPED  5
-#DEFINE DTMPED  6
-#DEFINE MENSAG  7
-#DEFINE STATUS  8
+	estrutura de aDados:
+	*/
+	#DEFINE ROTINA  1
+	#DEFINE HTTPCOD 2
+	#DEFINE RETORNO 3
+	#DEFINE HEADER  4
+	#DEFINE IDMPED  5
+	#DEFINE DTMPED  6
+	#DEFINE MENSAG  7
+	#DEFINE STATUS  8
 
 User Function fGravaMeusPedidos(aDados)
-Local aArea := GetArea()
-Local lRet  := .F.
-Default aDados := {}
+	Local aArea := GetArea()
+	Local lRet  := .F.
+	Default aDados := {}
 
-IF Len(aDados) == 8 .And. RecLock("ZZ1",.T.)
-	ZZ1_FILIAL := xFilial("ZZ1")
-	ZZ1_DATA   := Date()
-	ZZ1_HORA   := time()
-	ZZ1_USUARI := cUserName
-	ZZ1_ROTINA := aDados[ROTINA]
-	ZZ1_STATUS := aDados[STATUS]
-	ZZ1_HTTPCO := aDados[HTTPCOD]
-	ZZ1_RETHTT := aDados[RETORNO]
-	ZZ1_HEADHT := aDados[HEADER]
-	ZZ1_IDMEUS := aDados[IDMPED]
-	ZZ1_DTMEUS := aDados[DTMPED]
-	ZZ1_MENSAG := aDados[MENSAG]
-	ZZ1->(MsUnlock())
-	lRet := .T.
-endif
-RestArea(aArea)
+	IF Len(aDados) == 8 .And. RecLock("ZZ1",.T.)
+		ZZ1_FILIAL := xFilial("ZZ1")
+		ZZ1_DATA   := Date()
+		ZZ1_HORA   := time()
+		ZZ1_USUARI := cUserName
+		ZZ1_ROTINA := aDados[ROTINA]
+		ZZ1_STATUS := aDados[STATUS]
+		ZZ1_HTTPCO := aDados[HTTPCOD]
+		ZZ1_RETHTT := aDados[RETORNO]
+		ZZ1_HEADHT := aDados[HEADER]
+		ZZ1_IDMEUS := aDados[IDMPED]
+		ZZ1_DTMEUS := aDados[DTMPED]
+		ZZ1_MENSAG := aDados[MENSAG]
+		ZZ1->(MsUnlock())
+		lRet := .T.
+	endif
+	RestArea(aArea)
 Return(lRet)
