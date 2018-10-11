@@ -45,6 +45,9 @@ User Function fSincCVendedores(lJob)
 	cA1_XULTAV    := AllTrim(GetMV("A1_XULTATV",,"")) // Obtem a ultima data/hora de sincronizacao
 	cMailResp     := AllTrim(GetMV("MV_GWMAILR",,""))
 
+
+	
+
 	// Obtem lista de Item da Tabela de precos do Protheus para serem atualizados em Meus Pedidos  
 	cQuery += " SELECT  A3_COD AS VENDEDOR, " 
 	cQuery += "	A1_COD AS codigo, " 
@@ -71,7 +74,9 @@ User Function fSincCVendedores(lJob)
 	TABVEND->(dbGoTop())
 
 	While ! TABVEND->( EOF() )
-
+		
+		lRet := u_fLimpaVend(AllTrim(TABVEND->cliente_id))
+		
 		cJson := '{'
 		cJson += '	"cliente_id": ' + AllTrim(TABVEND->cliente_id) + ',' 
 		cJson += '	"usuario_id": ' + AllTrim(TABVEND->usuario_id) + ','
@@ -81,7 +86,7 @@ User Function fSincCVendedores(lJob)
 		MemoWrite("C:\temp\tabVEND.json",cJson)
 
 		// Inclui nova Item da Tabela em Meus Pedidos
-		aHttpPost		:= u_PostJson(cUrlBase,cJson)
+		aHttpPost		:= u_PostJson(cUrlBase ,cJson)
 		cJson    		:= aHttpPost[1]
 		cRetHead 		:= aHttpPost[2]
 		cCodHttp 		:= aHttpPost[3]
@@ -109,7 +114,7 @@ User Function fSincCVendedores(lJob)
 			u_GwLog("meuspedidos.log", cHtml)
 			u_GwSendMail(cMailResp,"","Inconsistência na integração MeusPedidos x Protheus",cHtml)
 		endif
-
+		
 		TABVEND->( DbSkip() )
 
 	End
@@ -121,5 +126,5 @@ User Function fSincCVendedores(lJob)
 
 	u_GwLog("meuspedidos.log","fSincCVendedores: Finalizada sincronizacao dos Vendedores x Clientes. Ultima sincronizacao " + GetMV("A1_XULTATV",,"") )
 	TABVEND->( DbCloseArea() )
-
+	
 Return
